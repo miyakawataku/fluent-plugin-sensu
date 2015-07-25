@@ -1,6 +1,6 @@
 # fluent-plugin-sensu
 
-[Fluentd](http://fluentd.org) output plugin to publish check results to
+[Fluentd](http://fluentd.org) output plugin to send check results to
 [sensu-client](https://sensuapp.org/docs/latest/clients),
 which is an agent process of Sensu monitoring framework.
 
@@ -23,7 +23,7 @@ This plugin is under development and not working yet.
   ## The check is named "ddos_detection"
   name ddos_detection
 
-  ## The return code is read from the field "level"
+  ## The severity is read from the field "level"
   status_field level
 </match>
 ```
@@ -111,9 +111,30 @@ is determined as below.
 The severity of the check result (`status` in Sensu check data)
 is determined as below.
 
-1. The field specified by `status_field` option, if present (highest priority)
+1. The field specified by `status_field` option,
+   if present and permitted (highest priority)
+  * The values permitted to the field for each state:
+    * 0: an integer ``0``
+      and strings ``"0"``, ``"OK"`` (case insensitive)
+    * 1: an integer ``1``
+      and strings ``"1"``, ``"WARNING"``, ``"warn"``
+    * 2: an integer ``2``
+      and strings ``"2"``, ``"CRITICAL"``, ``"crit"``
+    * 3: an integer ``3``
+      and strings ``"3"``, ``"UNKNOWN"``, ``"CUSTOM"``
 2. or `status` option, if present
+  * The permitted values for each state:
+    * 0: ``0`` and ``OK``
+    * 1: ``1``, ``WARNING"``, ``warn``
+    * 2: ``2``, ``CRITICAL``, ``crit``
+    * 3: ``3``, ``UNKNOWN``, ``CUSTOM``
+  * If the value is not permitted, it causes a configuration error.
 3. or `3`, which means `UNKNOWN` (lowest priority)
+
+The value of the field or the option is case insensitive.
+
+"warn" and "crit" come from
+[fluent-plugin-notifier](https://github.com/tagomoris/fluent-plugin-notifier).
 
 #### `type` of the check
 
@@ -121,6 +142,8 @@ The check type (`type` in Sensu check data)
 is determined as below.
 
 1. `check_type` option (highest priority)
+  * The permitted values are ``standard`` and ``metric``.
+  * If the value is not permitted, it causes a configuration error.
 2. or "standard" (lowest priority)
 
 #### `ttl` seconds till expiration
@@ -129,7 +152,9 @@ The TTL seconds till expiration (`ttl` in Sensu check data)
 is determined as below.
 
 1. `ttl` option (highest priority)
+  * In seconds.
 2. or N/A (lowest priority)
+  * It means no expiration detection is performed.
 
 #### `handler` or `handlers` to process check results
 
@@ -138,6 +163,7 @@ The handlers which process check results
 are determined as below.
 
 1. `handlers` option (highest priority)
+  * Specified as an array of strings.
 2. or `["default"]` (lowest priority)
 
 This plugin yields only `handlers` attribute.
@@ -149,7 +175,9 @@ The threshold percentages for flap detection
 are determined as below.
 
 1. `low_flap_threshold` and `high_flap_threshold` options (highest priority)
+  * In percentage.
 2. or N/A (lowest priority)
+  * It means no flap detection is performed.
 
 The two options either must be specified together,
 not specified at all.
@@ -164,12 +192,13 @@ is determined as below.
 1. The field specified by `source_field` option (highest priority)
 2. or `source` option
 3. or N/A (lowest priority)
+  * It means the host of sensu-client is considered as the check source.
 
 ### Buffering
 
 The default value of `flush_interval` option is set to 1 second.
 It means that check results are delayed at most 1 second
-before being published.
+before being sent.
 
 Except for `flush_interval`,
 the plugin uses default options
@@ -191,11 +220,97 @@ For example:
 
 ## Use case: "too many server errors" alert
 
-### Situation
+#### Situation
+
+Assume you have a web server which runs:
+
+* Apache HTTP server
+* Fluentd
+* sensu-client
+  * which listens to the TCP port 3030 for [Sensu client socket
+    ](https://sensuapp.org/docs/latest/clients#client-socket-input).
+
+You want to be notified when Apache responds too many server errors,
+for example 5 errors per minute as WARNING,
+and 50 errors per minute as CRITICAL.
+
+#### Configuration
+
+The setting for Fluentd utilizes
+[fluent-plugin-datacounter](https://github.com/tagomoris/fluent-plugin-datacounter),
+[fluent-plugin-record-reformer](https://github.com/sonots/fluent-plugin-record-reformer),
+and of course [fluent-plugin-sensu](https://github.com/miyakawataku/fluent-plugin-sensu).
+Install those plugins and add configuration as below.
+
+```apache
+# Parse Apache access log
+<source>
+  type tail
+  tag access
+  format apache2
+
+  # The paths vary by setup
+  path /var/log/httpd/access_log
+  pos_file /var/lib/fluentd/pos/httpd-access_log.pos
+</source>
+
+# Count 5xx errors per minute
+<match access>
+  type datacounter
+  tag count.access
+  unit minute
+  aggregate all
+  count_key code
+  pattern1 error ^5\d\d$
+</match>
+
+# Calculate the severity level
+<match count.access>
+  type record_reformer
+  tag server_errors
+  enable_ruby true
+  <record>
+    level ${error_count < 5 ? 'OK' : error_count < 50 ? 'WARNING' : 'CRITICAL'}
+  </record>
+</match>
+
+# Send checks to sensu-client
+<match server_errors>
+  type sensu
+  server localhost
+  port 3030
+
+  name server_errors
+  check_type standard
+  status_field level
+  ttl 100
+</match>
+```
+
+The TTL is set to 100 seconds here,
+because the check must be sent for each 60 seconds,
+plus 40 seconds as a margin.
+
+## Alternatives
+
+You can use [record\_transformer
+](http://docs.fluentd.org/articles/filter_record_transformer) filter
+instead of `fluent-plugin-record-reformer`
+on Fluentd 0.12.0 and above.
+
+If you are concerned with scalability,
+[fluent-plugin-norikra](https://github.com/norikra/fluent-plugin-norikra)
+may be a better option than datacounter and record\_reformer.
+
+Another alternative configuration for the use case is
+sending the error count to Graphite using [fluent-plugin-graphite
+](https://github.com/studio3104/fluent-plugin-graphite),
+and making Sensu monitor the value on Graphite with [check-data.rb
+](https://github.com/sensu/sensu-community-plugins/blob/master/plugins/graphite/check-data.rb).
 
 ## Installation
 
-Not yet available in any repositories.
+Install `fluent-plugin-sensu` gem (not yet available).
 
 # Contributing
 
