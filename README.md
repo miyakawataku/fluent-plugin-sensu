@@ -112,7 +112,7 @@ The severity of the check result is determined as below.
    if present and permitted (highest priority)
   * The values permitted to the field for each state:
     * 0: an integer ``0``
-      and strings ``"0"``, ``"OK"`` (case insensitive)
+      and strings ``"0"``, ``"OK"``
     * 1: an integer ``1``
       and strings ``"1"``, ``"WARNING"``, ``"warn"``
     * 2: an integer ``2``
@@ -295,7 +295,7 @@ may be a better option than datacounter and record\_reformer.
 Another alternative configuration for the use case is
 sending the error count to Graphite using [fluent-plugin-graphite](
 https://github.com/studio3104/fluent-plugin-graphite),
-and making Sensu monitor the value on Graphite with [check-data.rb ](
+and making Sensu monitor the value on Graphite with [check-data.rb](
 https://github.com/sensu/sensu-community-plugins/blob/master/plugins/graphite/check-data.rb).
 
 ## Installation
