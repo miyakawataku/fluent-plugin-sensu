@@ -38,8 +38,8 @@ Specify `type sensu` in the match section.
 * `server` (default is "localhost")
   * The IP address or the hostname of the host running sensu-client daemon.
 * `port` (default is 3030)
-  * The TCP port number of the [Sensu client socket
-    ](https://sensuapp.org/docs/latest/clients#client-socket-input)
+  * The TCP port number of the [Sensu client socket](
+    https://sensuapp.org/docs/latest/clients#client-socket-input)
     on which sensu-client daemon is listening.
 
 ### Check payload
@@ -80,36 +80,33 @@ This plugin supports the properties below.
   * Threshold percentages to determine the status is considered "flapping,"
     or the state is changed too frequently.
   * Same as the options in Nagios.
-    See the description of [Flap Detection
-    ](https://assets.nagios.com/downloads/nagioscore/docs/nagioscore/3/en/flapping.html)
+    See the description of [Flap Detection](
+    https://assets.nagios.com/downloads/nagioscore/docs/nagioscore/3/en/flapping.html)
     in Nagios.
 * `source`
   * The source of the check, such as servers or network switches.
   * If this attribute is not specified,
     the host of sensu-client is considered as the source.
 
-#### `name` of the check
+#### `name` attribute
 
-The check name (`name` in Sensu check data)
-is determined as below.
+The check name is determined as below.
 
 1. The field specified by `name_field` option, if present (highest priority)
 2. or `name` option, if present
 3. or the tag name (lowest priority)
 
-#### `output` to describe the check result
+#### `output` attribute
 
-The check output (`output` in Sensu check data)
-is determined as below.
+The check output is determined as below.
 
 1. The field specified by `output_field` option, if present (highest priority)
 2. or `output` option, if present
 3. or JSON notation of the record (lowest priority)
 
-#### `status` of the check severity
+#### `status` attribute
 
-The severity of the check result (`status` in Sensu check data)
-is determined as below.
+The severity of the check result is determined as below.
 
 1. The field specified by `status_field` option,
    if present and permitted (highest priority)
@@ -136,31 +133,27 @@ The value of the field or the option is case insensitive.
 "warn" and "crit" come from
 [fluent-plugin-notifier](https://github.com/tagomoris/fluent-plugin-notifier).
 
-#### `type` of the check
+#### `type` attribute
 
-The check type (`type` in Sensu check data)
-is determined as below.
+The check type is determined as below.
 
 1. `check_type` option (highest priority)
   * The permitted values are ``standard`` and ``metric``.
   * If the value is not permitted, it causes a configuration error.
 2. or "standard" (lowest priority)
 
-#### `ttl` seconds till expiration
+#### `ttl` attribute
 
-The TTL seconds till expiration (`ttl` in Sensu check data)
-is determined as below.
+The TTL seconds till expiration is determined as below.
 
 1. `ttl` option (highest priority)
   * In seconds.
 2. or N/A (lowest priority)
   * It means no expiration detection is performed.
 
-#### `handler` or `handlers` to process check results
+#### `handler` and `handlers` attributes
 
-The handlers which process check results
-(`handler` or `handlers` in Sensu check data)
-are determined as below.
+The handlers which process check results are determined as below.
 
 1. `handlers` option (highest priority)
   * Specified as an array of strings.
@@ -168,11 +161,9 @@ are determined as below.
 
 This plugin yields only `handlers` attribute.
 
-#### `low_flap_threshold` and `high_flap_threshold` for flap detection
+#### `low_flap_threshold` and `high_flap_threshold` attributes
 
-The threshold percentages for flap detection
-(`low_flap_threshold` and `high_flap_threshold` in Sensu check data)
-are determined as below.
+The threshold percentages for flap detection are determined as below.
 
 1. `low_flap_threshold` and `high_flap_threshold` options (highest priority)
   * In percentage.
@@ -184,10 +175,9 @@ not specified at all.
 If only one of the options is specified,
 it causes a configuration error.
 
-#### `source` of the check
+#### `source` attribute
 
-The source of the checks (`source` in Sensu check data)
-is determined as below.
+The source of the checks is determined as below.
 
 1. The field specified by `source_field` option (highest priority)
 2. or `source` option
@@ -227,8 +217,8 @@ Assume you have a web server which runs:
 * Apache HTTP server
 * Fluentd
 * sensu-client
-  * which listens to the TCP port 3030 for [Sensu client socket
-    ](https://sensuapp.org/docs/latest/clients#client-socket-input).
+  * which listens to the TCP port 3030 for [Sensu client socket](
+    https://sensuapp.org/docs/latest/clients#client-socket-input).
 
 You want to be notified when Apache responds too many server errors,
 for example 5 errors per minute as WARNING,
@@ -291,10 +281,10 @@ The TTL is set to 100 seconds here,
 because the check must be sent for each 60 seconds,
 plus 40 seconds as a margin.
 
-## Alternatives
+### Alternatives
 
-You can use [record\_transformer
-](http://docs.fluentd.org/articles/filter_record_transformer) filter
+You can use [record\_transformer](
+http://docs.fluentd.org/articles/filter_record_transformer) filter
 instead of `fluent-plugin-record-reformer`
 on Fluentd 0.12.0 and above.
 
@@ -303,10 +293,10 @@ If you are concerned with scalability,
 may be a better option than datacounter and record\_reformer.
 
 Another alternative configuration for the use case is
-sending the error count to Graphite using [fluent-plugin-graphite
-](https://github.com/studio3104/fluent-plugin-graphite),
-and making Sensu monitor the value on Graphite with [check-data.rb
-](https://github.com/sensu/sensu-community-plugins/blob/master/plugins/graphite/check-data.rb).
+sending the error count to Graphite using [fluent-plugin-graphite](
+https://github.com/studio3104/fluent-plugin-graphite),
+and making Sensu monitor the value on Graphite with [check-data.rb ](
+https://github.com/sensu/sensu-community-plugins/blob/master/plugins/graphite/check-data.rb).
 
 ## Installation
 
