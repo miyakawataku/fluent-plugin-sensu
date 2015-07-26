@@ -21,10 +21,10 @@ This plugin is under development and not working yet.
   # Payload settings
 
   ## The check is named "ddos_detection"
-  name ddos_detection
+  check_name ddos_detection
 
   ## The severity is read from the field "level"
-  status_field level
+  check_status_field level
 </match>
 ```
 
@@ -42,7 +42,7 @@ Specify `type sensu` in the match section.
     https://sensuapp.org/docs/latest/clients#client-socket-input)
     on which sensu-client daemon is listening.
 
-### Check payload
+### Check payload setting
 
 The payload of a check result is a JSON object
 which contains attributes as follows.
@@ -98,23 +98,25 @@ This plugin supports the attributes below.
 
 The check name is determined as below.
 
-1. The field specified by `name_field` option, if present (highest priority)
-2. or `name` option, if present
+1. The field specified by `check_name_field` option,
+   if present (highest priority)
+2. or `check_name` option, if present
 3. or the tag name (lowest priority)
 
 #### `output` attribute
 
 The check output is determined as below.
 
-1. The field specified by `output_field` option, if present (highest priority)
-2. or `output` option, if present
+1. The field specified by `check_output_field` option,
+   if present (highest priority)
+2. or `check_output` option, if present
 3. or JSON notation of the record (lowest priority)
 
 #### `status` attribute
 
 The severity of the check result is determined as below.
 
-1. The field specified by `status_field` option,
+1. The field specified by `check_status_field` option,
    if present and permitted (highest priority)
   * The values permitted to the field for each state:
     * 0: an integer ``0``
@@ -125,7 +127,7 @@ The severity of the check result is determined as below.
       and strings ``"2"``, ``"CRITICAL"``, ``"crit"``
     * 3: an integer ``3``
       and strings ``"3"``, ``"UNKNOWN"``, ``"CUSTOM"``
-2. or `status` option, if present
+2. or `check_status` option, if present
   * The permitted values for each state:
     * 0: ``0`` and ``OK``
     * 1: ``1``, ``WARNING"``, ``warn``
@@ -144,16 +146,15 @@ The value of the field or the option is case insensitive.
 The check type is determined as below.
 
 1. `check_type` option (highest priority)
-  * The permitted values are ``standard`` and ``metric``.
-  * If the value is not permitted, it causes a configuration error.
+  * The value must be a string ``standard`` or ``metric``.
 2. or "standard" (lowest priority)
 
 #### `ttl` attribute
 
 The TTL seconds till expiration is determined as below.
 
-1. `ttl` option (highest priority)
-  * In seconds.
+1. `check_ttl` option (highest priority)
+  * The value must be an integer which represents the TTL seconds.
 2. or N/A (lowest priority)
   * It means no expiration detection is performed.
 
@@ -161,8 +162,8 @@ The TTL seconds till expiration is determined as below.
 
 The handlers which process check results are determined as below.
 
-1. `handlers` option (highest priority)
-  * Specified as an array of strings.
+1. `check_handlers` option (highest priority)
+  * The value must be an array of strings which represent handler names.
 2. or `["default"]` (lowest priority)
 
 This plugin yields only `handlers` attribute.
@@ -171,8 +172,9 @@ This plugin yields only `handlers` attribute.
 
 The threshold percentages for flap detection are determined as below.
 
-1. `low_flap_threshold` and `high_flap_threshold` options (highest priority)
-  * In percentage.
+1. `check_low_flap_threshold`
+   and `check_high_flap_threshold` options (highest priority)
+  * The values must be integers of threshold percentages.
 2. or N/A (lowest priority)
   * It means no flap detection is performed.
 
@@ -185,8 +187,12 @@ it causes a configuration error.
 
 The source of the checks is determined as below.
 
-1. The field specified by `source_field` option (highest priority)
-2. or `source` option
+1. The field specified by `check_source_field` option,
+   if present and valid (highest priority)
+  * The valid values are strings composed of ASCII alphanumerics,
+    a period, and a hyphen.
+2. or `check_source` option
+  * The valid values are same as above.
 3. or N/A (lowest priority)
   * It means the host of sensu-client is considered as the check source.
 
@@ -194,10 +200,10 @@ The source of the checks is determined as below.
 
 The executed timestamp is determined as below.
 
-1. The field specified by `executed_field`
+1. The field specified by `check_executed_field`
    if present and valid (highest priority)
-  * The value should be an integer
-    and represent seconds since the Unix epoch.
+  * The value must be an integer
+    which represents seconds since the Unix epoch.
 2. The time of the Fluentd record (lowest priority)
 
 ### Buffering
@@ -286,10 +292,10 @@ Install those plugins and add configuration as below.
   server localhost
   port 3030
 
-  name server_errors
+  check_name server_errors
   check_type standard
-  status_field level
-  ttl 100
+  check_status_field level
+  check_ttl 100
 </match>
 ```
 
