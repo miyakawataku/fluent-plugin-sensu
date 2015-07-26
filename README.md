@@ -44,7 +44,8 @@ Specify `type sensu` in the match section.
 
 ### Check payload
 
-The payload of a check result is JSON data with attributes as follows.
+The payload of a check result is a JSON object
+which contains attributes as follows.
 
 * `name`
   * The check name to identify the check.
@@ -55,9 +56,8 @@ The payload of a check result is JSON data with attributes as follows.
   * The severity of the check result.
   * 0 (OK), 1 (WARNING), 2 (CRITICAL) or 3 (UNKNOWN or CUSTOM).
 
-The payload of a check result can also contain
-standard check definition attributes.
-This plugin supports the properties below.
+The check result can also contain other attributes.
+This plugin supports the attributes below.
 
 * `type`
   * Either "standard" or "metric".
@@ -87,6 +87,12 @@ This plugin supports the properties below.
   * The source of the check, such as servers or network switches.
   * If this attribute is not specified,
     the host of sensu-client is considered as the source.
+* `executed`
+  * The timestamp on which the check is executed.
+  * Note that there is also a timestamp attribute named `issued`,
+    which is automatically measured by sensu-client process.
+    Uchiwa, the default dashboard of Sensu, displays `issued`
+    as the timestamp of check results.
 
 #### `name` attribute
 
@@ -183,6 +189,16 @@ The source of the checks is determined as below.
 2. or `source` option
 3. or N/A (lowest priority)
   * It means the host of sensu-client is considered as the check source.
+
+#### `executed` attribute
+
+The executed timestamp is determined as below.
+
+1. The field specified by `executed_field`
+   if present and valid (highest priority)
+  * The value should be an integer
+    and represent seconds since the Unix epoch.
+2. The time of the Fluentd record (lowest priority)
 
 ### Buffering
 
