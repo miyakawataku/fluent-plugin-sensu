@@ -101,7 +101,7 @@ The check name is determined as below.
 1. The field specified by `check_name_field` option,
    if present and valid (highest priority)
   * The valid values are strings composed of ASCII alphanumerics,
-    a period, and a hyphen.
+    underscores, periods, and hyphens.
 2. or `check_name` option, if present
   * The valid values are same as above.
 3. or the tag name, if valid
@@ -292,7 +292,7 @@ Install those plugins and add configuration as below.
   server localhost
   port 3030
 
-  check_name server-errors
+  check_name server_errors
   check_type standard
   check_status_field level
   check_ttl 100
