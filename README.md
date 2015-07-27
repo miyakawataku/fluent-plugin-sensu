@@ -89,7 +89,7 @@ This plugin supports the attributes below.
     the host of sensu-client is considered as the source.
 * `executed`
   * The timestamp on which the check is executed.
-  * Note that there is also a timestamp attribute named `issued`,
+  * Note that there is also another timestamp attribute named `issued`,
     which is automatically measured by sensu-client process.
     Uchiwa, the default dashboard of Sensu, displays `issued`
     as the timestamp of check results.
@@ -99,9 +99,14 @@ This plugin supports the attributes below.
 The check name is determined as below.
 
 1. The field specified by `check_name_field` option,
-   if present (highest priority)
+   if present and valid (highest priority)
+  * The valid values are strings composed of ASCII alphanumerics,
+    a period, and a hyphen.
 2. or `check_name` option, if present
-3. or the tag name (lowest priority)
+  * The valid values are same as above.
+3. or the tag name, if valid
+  * The valid values are same as above.
+4. or "fluent-plugin-sensu" (lowest priority)
 
 #### `output` attribute
 
@@ -118,25 +123,23 @@ The severity of the check result is determined as below.
 
 1. The field specified by `check_status_field` option,
    if present and permitted (highest priority)
-  * The values permitted to the field for each state:
-    * 0: an integer ``0``
+  * The values permitted to the field for each status (case insensitive):
+    * status 0: an integer ``0``
       and strings ``"0"``, ``"OK"``
-    * 1: an integer ``1``
+    * status 1: an integer ``1``
       and strings ``"1"``, ``"WARNING"``, ``"warn"``
-    * 2: an integer ``2``
+    * status 2: an integer ``2``
       and strings ``"2"``, ``"CRITICAL"``, ``"crit"``
-    * 3: an integer ``3``
+    * status 3: an integer ``3``
       and strings ``"3"``, ``"UNKNOWN"``, ``"CUSTOM"``
 2. or `check_status` option, if present
-  * The permitted values for each state:
-    * 0: ``0`` and ``OK``
-    * 1: ``1``, ``WARNING"``, ``warn``
-    * 2: ``2``, ``CRITICAL``, ``crit``
-    * 3: ``3``, ``UNKNOWN``, ``CUSTOM``
+  * The permitted values for each status (case insensitive):
+    * status 0: ``0`` and ``OK``
+    * status 1: ``1``, ``WARNING``, ``warn``
+    * status 2: ``2``, ``CRITICAL``, ``crit``
+    * status 3: ``3``, ``UNKNOWN``, ``CUSTOM``
   * If the value is not permitted, it causes a configuration error.
-3. or `3`, which means `UNKNOWN` (lowest priority)
-
-The value of the field or the option is case insensitive.
+3. or `3`, which means UNKNOWN or CUSTOM (lowest priority)
 
 "warn" and "crit" come from
 [fluent-plugin-notifier](https://github.com/tagomoris/fluent-plugin-notifier).
@@ -146,7 +149,7 @@ The value of the field or the option is case insensitive.
 The check type is determined as below.
 
 1. `check_type` option (highest priority)
-  * The value must be a string ``standard`` or ``metric``.
+  * The value must be a string ``"standard"`` or ``"metric"``.
 2. or "standard" (lowest priority)
 
 #### `ttl` attribute
@@ -189,10 +192,7 @@ The source of the checks is determined as below.
 
 1. The field specified by `check_source_field` option,
    if present and valid (highest priority)
-  * The valid values are strings composed of ASCII alphanumerics,
-    a period, and a hyphen.
 2. or `check_source` option
-  * The valid values are same as above.
 3. or N/A (lowest priority)
   * It means the host of sensu-client is considered as the check source.
 
@@ -292,7 +292,7 @@ Install those plugins and add configuration as below.
   server localhost
   port 3030
 
-  check_name server_errors
+  check_name server-errors
   check_type standard
   check_status_field level
   check_ttl 100
