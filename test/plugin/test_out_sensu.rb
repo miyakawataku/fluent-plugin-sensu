@@ -60,7 +60,10 @@ class SensuOutputTest < Test::Unit::TestCase
       'status' => 3,
       'type' => 'standard',
       'handlers' => ['default'],
-      'executed' => time
+      'executed' => time,
+      'fluentd_tag' => 'ddos',
+      'fluentd_time' => time.to_i,
+      'fluentd_record' => {},
     }
     assert_equal [['localhost', 3030, expected]], result
   end
@@ -81,7 +84,10 @@ class SensuOutputTest < Test::Unit::TestCase
       'status' => 3,
       'type' => 'standard',
       'handlers' => ['default'],
-      'executed' => time
+      'executed' => time,
+      'fluentd_tag' => 'ddos',
+      'fluentd_time' => time.to_i,
+      'fluentd_record' => {},
     }
     assert_equal [['sensu-client.local', 3031, expected]], result
   end
@@ -113,7 +119,10 @@ class SensuOutputTest < Test::Unit::TestCase
       'status' => 3,
       'type' => 'standard',
       'handlers' => ['default'],
-      'executed' => time
+      'executed' => time,
+      'fluentd_tag' => 'ddos',
+      'fluentd_time' => time.to_i,
+      'fluentd_record' => { 'service' => 'flood' },
     }
     expected2 = {
       'name' => 'ddos_detection',
@@ -121,7 +130,10 @@ class SensuOutputTest < Test::Unit::TestCase
       'status' => 3,
       'type' => 'standard',
       'handlers' => ['default'],
-      'executed' => time
+      'executed' => time,
+      'fluentd_tag' => 'ddos',
+      'fluentd_time' => time.to_i,
+      'fluentd_record' => { 'service' => 'invalid/check/name' },
     }
     expected3 = {
       'name' => 'ddos_detection',
@@ -129,7 +141,10 @@ class SensuOutputTest < Test::Unit::TestCase
       'status' => 3,
       'type' => 'standard',
       'handlers' => ['default'],
-      'executed' => time
+      'executed' => time,
+      'fluentd_tag' => 'ddos',
+      'fluentd_time' => time.to_i,
+      'fluentd_record' => {},
     }
     assert_equal [
       ['localhost', 3030, expected1],
@@ -151,7 +166,10 @@ class SensuOutputTest < Test::Unit::TestCase
       'status' => 3,
       'type' => 'standard',
       'handlers' => ['default'],
-      'executed' => time
+      'executed' => time,
+      'fluentd_tag' => 'ddos',
+      'fluentd_time' => time.to_i,
+      'fluentd_record' => {},
     }
     assert_equal([['localhost', 3030, expected]], result)
   end
@@ -169,7 +187,10 @@ class SensuOutputTest < Test::Unit::TestCase
       'status' => 3,
       'type' => 'standard',
       'handlers' => ['default'],
-      'executed' => time
+      'executed' => time,
+      'fluentd_tag' => 'invalid/check/name',
+      'fluentd_time' => time.to_i,
+      'fluentd_record' => {},
     }
     assert_equal([['localhost', 3030, expected]], result)
   end

@@ -99,7 +99,7 @@ This plugin additionally adds these custom attributes to check results.
 * `fluentd_tag`
   * The tag of the Fluentd data.
 * `fluentd_time`
-  * The time of the Fluentd data.
+  * The time of the Fluentd data, in seconds since the Unix epoch.
 * `fluentd_record`
   * The record of the Fluentd data.
 
