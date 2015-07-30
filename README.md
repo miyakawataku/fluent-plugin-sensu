@@ -94,6 +94,15 @@ This plugin supports the attributes below.
     Uchiwa, the default dashboard of Sensu, displays `issued`
     as the timestamp of check results.
 
+This plugin additionally adds these custom attributes to check results.
+
+* `fluentd_tag`
+  * The tag of the Fluentd data.
+* `fluentd_time`
+  * The time of the Fluentd data.
+* `fluentd_record`
+  * The record of the Fluentd data.
+
 #### `name` attribute
 
 The check name is determined as below.
