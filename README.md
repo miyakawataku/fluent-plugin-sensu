@@ -98,11 +98,15 @@ This plugin supports the attributes below.
 
 This plugin additionally adds these custom attributes to check results.
 
-* `$.fluentd_tag`
+This plugin additionally adds "fluentd" attribute.
+The value of the attribute is a JSON object
+whoes elements are input to the plugin.
+
+* `$.fluentd.tag`
   * The tag of the Fluentd data.
-* `$.fluentd_time`
+* `$.fluentd.time`
   * The time of the Fluentd data, in seconds since the Unix epoch.
-* `$.fluentd_record`
+* `$.fluentd.record`
   * The record of the Fluentd data.
 
 #### `name` attribute

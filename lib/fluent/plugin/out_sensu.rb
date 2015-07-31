@@ -65,9 +65,11 @@ module Fluent
           'type' => 'standard',
           'handlers' => ['default'],
           'executed' => time,
-          'fluentd_tag' => tag,
-          'fluentd_time' => time.to_i,
-          'fluentd_record' => record,
+          'fluentd' => {
+            'tag' => tag,
+            'time' => time.to_i,
+            'record' => record,
+          },
         }
         send_check(@server, @port, payload)
       }
