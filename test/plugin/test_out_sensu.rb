@@ -390,5 +390,36 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "ttl" attribute {{{1
+
+  # Specifies TTL at config.
+  def test_specify_ttl
+    driver = create_driver(%[
+      check_ttl 30
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected = {
+      'name' => 'ddos',
+      'output' => '{}',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+      'ttl' => 30,
+    }
+    assert_equal([
+      ['localhost', 3030, expected],
+    ], result)
+  end
+
+  # }}}1
 
 end

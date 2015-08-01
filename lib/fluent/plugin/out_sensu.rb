@@ -62,6 +62,9 @@ module Fluent
       check_type
     }
 
+    # Option for "ttl" attribute.
+    config_param :check_ttl, :integer, :default => nil
+
     # Load modules.
     private
     def initialize
@@ -110,6 +113,7 @@ module Fluent
             'record' => record,
           },
         }
+        payload['ttl'] = @check_ttl if @check_ttl
         send_check(@server, @port, payload)
       }
     end
