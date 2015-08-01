@@ -146,11 +146,11 @@ module Fluent
       chunk.msgpack_each { |(tag, time, record)|
         payload = {
           'name' => determine_check_name(tag, record),
-          'output' => determine_output(record),
-          'status' => determine_status(record),
+          'output' => determine_output(tag, record),
+          'status' => determine_status(tag, record),
           'type' => @check_type,
           'handlers' => @check_handlers,
-          'executed' => determine_executed_time(time, record),
+          'executed' => determine_executed_time(tag, time, record),
           'fluentd' => {
             'tag' => tag,
             'time' => time.to_i,
@@ -164,7 +164,7 @@ module Fluent
         add_attribute_if_present(
           payload, 'high_flap_threshold', @check_high_flap_threshold)
         add_attribute_if_present(
-          payload, 'source', determine_source(record))
+          payload, 'source', determine_source(tag, record))
         send_check(@server, @port, payload)
       }
     end
@@ -193,17 +193,14 @@ module Fluent
       # Field specified by check_name_field option
       if @check_name_field
         check_name = record[@check_name_field]
-        if check_name =~ CHECK_NAME_PATTERN
-          return record[@check_name_field]
-        else
-          log.warn('Invalid check name in the field.' +
-                   ' Fallback to check_name option, tag,' +
-                   ' or constant "fluent-plugin-sensu".',
-                   :tag => tag,
-                   :check_name_field => @check_name_field,
-                   :value => check_name)
-          # Fall through
-        end
+        return check_name if check_name =~ CHECK_NAME_PATTERN
+        log.warn('Invalid check name in the field.' +
+                 ' Fallback to check_name option, tag,' +
+                 ' or constant "fluent-plugin-sensu".',
+                 :tag => tag,
+                 :check_name_field => @check_name_field,
+                 :value => check_name)
+        # Fall through
       end
       # check_name option
       return @check_name if @check_name
@@ -218,11 +215,13 @@ module Fluent
 
     # Determines "output" attribute of a check.
     private
-    def determine_output(record)
+    def determine_output(tag, record)
       # Read from the field
       if @check_output_field
         check_output = record[@check_output_field]
         return check_output if check_output
+        log.warn('the field for "output" attribute is absent',
+                :tag => tag, :check_output_field => @check_output_field)
         # Fall through
       end
       # Returns the option value
@@ -233,7 +232,7 @@ module Fluent
 
     # Determines "status" attribute of a check.
     private
-    def determine_status(record)
+    def determine_status(tag, record)
       # Read from the field
       if @check_status_field
         status_field_val = record[@check_status_field]
@@ -241,6 +240,9 @@ module Fluent
           check_status = SensuOutput.normalize_status(status_field_val)
           return check_status if check_status
         end
+        log.warn('the field for "status" attribute is invalid',
+                :tag => tag, :check_status_field => @check_status_field,
+                :value => status_field_val)
       end
       # Returns the default
       return @check_status
@@ -259,20 +261,24 @@ module Fluent
 
     # Determines "source" attribute of a check.
     private
-    def determine_source(record)
+    def determine_source(tag, record)
       if @check_source_field
         source = record[@check_source_field]
         return source if source
+        log.warn('the field for "source" attribute is absent',
+                :tag => tag, :check_source_field => @check_source_field)
       end
       return @check_source
     end
 
     # Determines "executed" attribute of a check.
     private
-    def determine_executed_time(time, record)
+    def determine_executed_time(tag, time, record)
       if @check_executed_field
         executed = record[@check_executed_field]
         return executed if executed.is_a?(Integer)
+        log.warn('the field for "executed" attribute is absent',
+                :tag => tag, :check_executed_field => @check_executed_field)
       end
       return time
     end
