@@ -471,5 +471,86 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "low_flap_threshold" and "high_flap_threshold" attributes {{{1
+
+  # The thresholds must be specified together if one is specified.
+  def test_flapping_thrsholds_must_be_specified_together
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[
+        check_low_flap_threshold 40
+      ], 'ddos')
+    }
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[
+        check_high_flap_threshold 60
+      ], 'ddos')
+    }
+  end
+
+  # The thresholds must be in order.
+  def test_flapping_thresholds_order
+    assert_nothing_raised {
+      create_driver(%[
+        check_low_flap_threshold 0
+        check_high_flap_threshold 100
+      ], 'ddos')
+    }
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[
+        check_low_flap_threshold -1
+        check_high_flap_threshold 100
+      ], 'ddos')
+    }
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[
+        check_low_flap_threshold 0
+        check_high_flap_threshold 101
+      ], 'ddos')
+    }
+    assert_nothing_raised {
+      create_driver(%[
+        check_low_flap_threshold 50
+        check_high_flap_threshold 50
+      ], 'ddos')
+    }
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[
+        check_low_flap_threshold 50
+        check_high_flap_threshold 49
+      ], 'ddos')
+    }
+  end
+
+  # Specifies flapping thresholds.
+  def test_specify_flapping_thresholds
+    driver = create_driver(%[
+      check_low_flap_threshold 40
+      check_high_flap_threshold 60
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected = {
+      'name' => 'ddos',
+      'output' => '{}',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+      'low_flap_threshold' => 40,
+      'high_flap_threshold' => 60,
+    }
+    assert_equal([
+      ['localhost', 3030, expected],
+    ], result)
+  end
+
+  # }}}1
 
 end

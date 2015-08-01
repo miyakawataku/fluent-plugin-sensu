@@ -194,8 +194,10 @@ The threshold percentages for flap detection are determined as below.
 
 The two options either must be specified together,
 not specified at all.
-If only one of the options is specified,
-it causes a configuration error.
+
+If the options are specified,
+the following condition must be true:
+`0 <= check_low_flap_threshold <= check_high_flap_threshold <= 100`.
 
 #### `source` attribute
 

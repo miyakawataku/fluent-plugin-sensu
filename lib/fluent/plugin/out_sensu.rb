@@ -81,6 +81,10 @@ module Fluent
       array
     }
 
+    # Options for flapping thresholds.
+    config_param :check_low_flap_threshold, :integer, :default => nil
+    config_param :check_high_flap_threshold, :integer, :default => nil
+
     # Load modules.
     private
     def initialize
@@ -93,6 +97,7 @@ module Fluent
     def configure(conf)
       super
       reject_invalid_check_name
+      reject_invalid_flapping_thresholds
     end
 
     # Reject check_name option if invalid
@@ -102,6 +107,26 @@ module Fluent
         raise ConfigError,
           "check_name must be a string consisting of one or more" +
           " ASCII alphanumerics, underscores, periods, and hyphens"
+      end
+    end
+
+    # Reject invalid check_low_flap_threshold and check_high_flap_threshold
+    private
+    def reject_invalid_flapping_thresholds
+      if @check_low_flap_threshold.nil? ^ @check_high_flap_threshold.nil?
+        raise ConfigError,
+          "'check_low_flap_threshold' and 'check_high_flap_threshold'" +
+          " specified togher, or not specified at all."
+      end
+      if @check_low_flap_threshold
+        in_order = 0 <= @check_low_flap_threshold &&
+          @check_low_flap_threshold <= @check_high_flap_threshold &&
+          @check_high_flap_threshold <= 100
+        if not in_order
+          raise ConfigError,
+            "the following condition must be true:" +
+            " 0 <= check_low_flap_threshold <= check_high_flap_threshold <= 100"
+        end
       end
     end
 
@@ -129,9 +154,21 @@ module Fluent
             'record' => record,
           },
         }
-        payload['ttl'] = @check_ttl if @check_ttl
+        add_attribute_if_present(
+          payload, 'ttl', @check_ttl)
+        add_attribute_if_present(
+          payload, 'low_flap_threshold', @check_low_flap_threshold)
+        add_attribute_if_present(
+          payload, 'high_flap_threshold', @check_high_flap_threshold)
         send_check(@server, @port, payload)
       }
+    end
+
+    private
+    def add_attribute_if_present(payload, name, value)
+      if value
+        payload[name] = value
+      end
     end
 
     # Determines "name" attribute of a check.
