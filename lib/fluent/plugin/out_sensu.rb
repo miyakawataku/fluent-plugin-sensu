@@ -7,16 +7,6 @@ module Fluent
   class SensuOutput < Fluent::BufferedOutput
     Fluent::Plugin.register_output('sensu', self)
 
-    private
-    def self.to_status(status_val)
-      status_str = status_val.to_s
-      return 0 if status_str =~ OK_PATTERN
-      return 1 if status_str =~ WARNING_PATTERN
-      return 2 if status_str =~ CRITICAL_PATTERN
-      return 3 if status_str =~ UNKNOWN_PATTERN
-      return nil
-    end
-
     #
     # Config parameters
     #
@@ -39,7 +29,7 @@ module Fluent
     # Options for "status" attribute.
     config_param :check_status_field, :string, :default => nil
     config_param(:check_status, :default => 3) { |status_str|
-      check_status = SensuOutput.to_status(status_str)
+      check_status = SensuOutput.normalize_status(status_str)
       if not check_status
         raise Fluent::ConfigError,
           "invalid 'check_status': #{status_str}; 'check_status' must be" +
@@ -84,6 +74,9 @@ module Fluent
     # Options for "source" attribute.
     config_param :check_source_field, :string, :default => nil
     config_param :check_source, :string, :default => nil
+
+    # Options for "executed" attribute.
+    config_param :check_executed_field, :string, :default => nil
 
     # Load modules.
     private
@@ -147,7 +140,7 @@ module Fluent
           'status' => determine_status(record),
           'type' => @check_type,
           'handlers' => @check_handlers,
-          'executed' => time,
+          'executed' => determine_executed_time(time, record),
           'fluentd' => {
             'tag' => tag,
             'time' => time.to_i,
@@ -222,12 +215,23 @@ module Fluent
       if @check_status_field
         status_field_val = record[@check_status_field]
         if status_field_val
-          check_status = SensuOutput.to_status(status_field_val)
+          check_status = SensuOutput.normalize_status(status_field_val)
           return check_status if check_status
         end
       end
       # Returns the default
       return @check_status
+    end
+
+    # Converts variations of status values to an integer.
+    private
+    def self.normalize_status(status_val)
+      status_str = status_val.to_s
+      return 0 if status_str =~ OK_PATTERN
+      return 1 if status_str =~ WARNING_PATTERN
+      return 2 if status_str =~ CRITICAL_PATTERN
+      return 3 if status_str =~ UNKNOWN_PATTERN
+      return nil
     end
 
     private
@@ -237,6 +241,16 @@ module Fluent
         return source if source
       end
       return @check_source
+    end
+
+    # Determines "executed" attribute of a check.
+    private
+    def determine_executed_time(time, record)
+      if @check_executed_field
+        executed = record[@check_executed_field]
+        return executed if executed.is_a?(Integer)
+      end
+      return time
     end
 
     # Send a check to sensu-client.

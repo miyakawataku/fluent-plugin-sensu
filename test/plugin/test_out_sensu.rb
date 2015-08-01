@@ -601,5 +601,65 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "executed" attribute {{{1
+
+  def test_determine_executed_by_options
+    driver = create_driver(%[
+      check_executed_field timestamp
+    ], 'ddos')
+    data_time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    field_time = Time.parse('2015-01-03 23:45:12 UTC').to_i
+    driver.emit({ 'timestamp' => field_time.to_i }, data_time)
+    driver.emit({ 'timestamp' => 'not-integer' }, data_time)
+    driver.emit({}, data_time)
+    driver.run
+    result = driver.instance.sent_data
+    expected_for_field = {
+      'name' => 'ddos',
+      'output' => "{\"timestamp\":#{field_time.to_i}}",
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => field_time.to_i,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => data_time.to_i,
+        'record' => { 'timestamp' => field_time.to_i },
+      },
+    }
+    expected_for_error_data = {
+      'name' => 'ddos',
+      'output' => '{"timestamp":"not-integer"}',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => data_time.to_i,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => data_time.to_i,
+        'record' => { 'timestamp' => 'not-integer' },
+      },
+    }
+    expected_for_data_time = {
+      'name' => 'ddos',
+      'output' => "{}",
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => data_time.to_i,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => data_time.to_i,
+        'record' => {},
+      },
+    }
+    assert_equal([
+      ['localhost', 3030, expected_for_field],
+      ['localhost', 3030, expected_for_error_data],
+      ['localhost', 3030, expected_for_data_time],
+    ], result)
+  end
+
+  # }}}1
 
 end
