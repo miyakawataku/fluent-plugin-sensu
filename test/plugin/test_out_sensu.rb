@@ -326,5 +326,69 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "type" attribute {{{1
+
+  # Rejects a check types if it is neither "standard" nor "metric".
+  def test_rejects_invalid_check_type
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[check_type nosuchtype], 'ddos')
+    }
+  end
+
+  # Specifies "standard" check type.
+  def test_specify_standard_check_type
+    driver = create_driver(%[
+      check_type standard
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected = {
+      'name' => 'ddos',
+      'output' => '{}',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+    }
+    assert_equal([
+      ['localhost', 3030, expected],
+    ], result)
+  end
+
+  # Specifies "metric" check type.
+  def test_specify_metric_check_type
+    driver = create_driver(%[
+      check_type metric
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected = {
+      'name' => 'ddos',
+      'output' => '{}',
+      'status' => 3,
+      'type' => 'metric',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+    }
+    assert_equal([
+      ['localhost', 3030, expected],
+    ], result)
+  end
+
+  # }}}1
 
 end

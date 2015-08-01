@@ -52,6 +52,16 @@ module Fluent
     CRITICAL_PATTERN = /\A(2|CRITICAL|crit)\z/i
     UNKNOWN_PATTERN = /\A(3|UNKNOWN|CUSTOM)\z/i
 
+    # Option for "type" attribute.
+    config_param(:check_type, :default => 'standard') { |check_type|
+      if not ['standard', 'metric'].include?(check_type)
+        raise Fluent::ConfigError,
+          "invalid 'check_type': #{check_type}; 'check_type' must be" +
+          ' either "standard" or "metric".'
+      end
+      check_type
+    }
+
     # Load modules.
     private
     def initialize
@@ -91,7 +101,7 @@ module Fluent
           'name' => determine_check_name(tag, record),
           'output' => determine_output(record),
           'status' => determine_status(record),
-          'type' => 'standard',
+          'type' => @check_type,
           'handlers' => ['default'],
           'executed' => time,
           'fluentd' => {
