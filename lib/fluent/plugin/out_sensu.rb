@@ -7,6 +7,16 @@ module Fluent
   class SensuOutput < Fluent::BufferedOutput
     Fluent::Plugin.register_output('sensu', self)
 
+    private
+    def self.to_status(status_val)
+      status_str = status_val.to_s
+      return 0 if status_str =~ OK_PATTERN
+      return 1 if status_str =~ WARNING_PATTERN
+      return 2 if status_str =~ CRITICAL_PATTERN
+      return 3 if status_str =~ UNKNOWN_PATTERN
+      return nil
+    end
+
     #
     # Config parameters
     #
@@ -20,12 +30,27 @@ module Fluent
     # Options for "name" attribute.
     config_param :check_name, :string, :default => nil
     config_param :check_name_field, :string, :default => nil
+    CHECK_NAME_PATTERN = /\A[\w.-]+\z/
 
     # Options for "output" attribute.
     config_param :check_output_field, :string, :default => nil
     config_param :check_output, :string, :default => nil
 
-    CHECK_NAME_PATTERN = /\A[\w.-]+\z/
+    # Options for "status" attribute.
+    config_param :check_status_field, :string, :default => nil
+    config_param(:check_status, :default => 3) { |status_str|
+      check_status = SensuOutput.to_status(status_str)
+      if not check_status
+        raise Fluent::ConfigError,
+          "invalid 'check_status': #{status_str}; 'check_status' must be" +
+          " 0/1/2/3, OK/WARNING/CRITICAL/CUSTOM, warn/crit"
+      end
+      check_status
+    }
+    OK_PATTERN = /\A(0|OK)\z/i
+    WARNING_PATTERN = /\A(1|WARNING|warn)\z/i
+    CRITICAL_PATTERN = /\A(2|CRITICAL|crit)\z/i
+    UNKNOWN_PATTERN = /\A(3|UNKNOWN|CUSTOM)\z/i
 
     # Load modules.
     private
@@ -65,7 +90,7 @@ module Fluent
         payload = {
           'name' => determine_check_name(tag, record),
           'output' => determine_output(record),
-          'status' => 3,
+          'status' => determine_status(record),
           'type' => 'standard',
           'handlers' => ['default'],
           'executed' => time,
@@ -132,6 +157,21 @@ module Fluent
       end
       # Default to JSON notation of the record
       return record.to_json
+    end
+
+    # Determines "status" attribute of a check.
+    private
+    def determine_status(record)
+      # Read from the field
+      if @check_status_field
+        status_field_val = record[@check_status_field]
+        if status_field_val
+          check_status = SensuOutput.to_status(status_field_val)
+          return check_status if check_status
+        end
+      end
+      # Returns the default
+      return @check_status
     end
 
     # Send a check to sensu-client.

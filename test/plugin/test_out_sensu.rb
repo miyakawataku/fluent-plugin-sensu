@@ -257,5 +257,74 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "status" attribute {{{1
+
+  # Rejects an invalid value for check_status option.
+  def test_rejects_invalid_status
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[check_status 4], 'ddos')
+    }
+  end
+
+  # "status" attribute is determined by check_status
+  # and check_status_field option if specified.
+  def test_determine_status_attribute_with_options
+    driver = create_driver(%[
+      check_status_field severity
+      check_status 0
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({ 'severity' => 1 }, time)
+    driver.emit({ 'severity' => 'Critical' }, time)
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected_for_numerical_severity = {
+      'name' => 'ddos',
+      'output' => '{"severity":1}',
+      'status' => 1,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => { 'severity' => 1 },
+      },
+    }
+    expected_for_string_severity = {
+      'name' => 'ddos',
+      'output' => '{"severity":"Critical"}',
+      'status' => 2,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => { 'severity' => 'Critical' },
+      },
+    }
+    expected_for_option = {
+      'name' => 'ddos',
+      'output' => '{}',
+      'status' => 0,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+    }
+    assert_equal([
+      ['localhost', 3030, expected_for_numerical_severity],
+      ['localhost', 3030, expected_for_string_severity],
+      ['localhost', 3030, expected_for_option],
+    ], result)
+  end
+
+  # }}}1
 
 end
