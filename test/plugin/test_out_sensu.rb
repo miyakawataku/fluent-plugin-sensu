@@ -552,5 +552,54 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "source" attribute {{{1
+
+  # "source" attribute is determined by check_source_field
+  # and check_source option if specified.
+  def test_determine_source_by_options
+    driver = create_driver(%[
+      check_source_field machine
+      check_source router.example.com
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({ 'machine' => 'ups.example.com' }, time)
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected_for_field = {
+      'name' => 'ddos',
+      'output' => '{"machine":"ups.example.com"}',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => { 'machine' => 'ups.example.com' },
+      },
+      'source' => 'ups.example.com',
+    }
+    expected_for_option = {
+      'name' => 'ddos',
+      'output' => '{}',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+      'source' => 'router.example.com',
+    }
+    assert_equal([
+      ['localhost', 3030, expected_for_field],
+      ['localhost', 3030, expected_for_option],
+    ], result)
+  end
+
+  # }}}1
 
 end

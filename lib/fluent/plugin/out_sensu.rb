@@ -85,6 +85,10 @@ module Fluent
     config_param :check_low_flap_threshold, :integer, :default => nil
     config_param :check_high_flap_threshold, :integer, :default => nil
 
+    # Options for "source" attribute.
+    config_param :check_source_field, :string, :default => nil
+    config_param :check_source, :string, :default => nil
+
     # Load modules.
     private
     def initialize
@@ -160,6 +164,8 @@ module Fluent
           payload, 'low_flap_threshold', @check_low_flap_threshold)
         add_attribute_if_present(
           payload, 'high_flap_threshold', @check_high_flap_threshold)
+        add_attribute_if_present(
+          payload, 'source', determine_source(record))
         send_check(@server, @port, payload)
       }
     end
@@ -239,6 +245,15 @@ module Fluent
       end
       # Returns the default
       return @check_status
+    end
+
+    private
+    def determine_source(record)
+      if @check_source_field
+        source = record[@check_source_field]
+        return source if source
+      end
+      return @check_source
     end
 
     # Send a check to sensu-client.
