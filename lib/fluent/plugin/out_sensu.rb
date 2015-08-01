@@ -70,14 +70,10 @@ module Fluent
       error_message = "invalid 'check_handlers': #{handlers_str};" +
                       " 'check_handlers' must be an array of strings."
       obj = JSON.load(handlers_str)
-      if not obj.is_a?(Array)
-        raise Fluent::ConfigError, error_message
-      end
+      raise Fluent::ConfigError, error_message if not obj.is_a?(Array)
       array = obj
       all_string_elements = array.all? { |e| e.is_a?(String) }
-      if not all_string_elements
-        raise Fluent::ConfigError, error_message
-      end
+      raise Fluent::ConfigError, error_message if not all_string_elements
       array
     }
 
@@ -172,9 +168,7 @@ module Fluent
 
     private
     def add_attribute_if_present(payload, name, value)
-      if value
-        payload[name] = value
-      end
+      payload[name] = value if value
     end
 
     # Determines "name" attribute of a check.
@@ -195,17 +189,10 @@ module Fluent
           # Fall through
         end
       end
-
       # check_name option
-      if @check_name
-        return @check_name
-      end
-
+      return @check_name if @check_name
       # Tag
-      if tag =~ CHECK_NAME_PATTERN
-        return tag
-      end
-
+      return tag if tag =~ CHECK_NAME_PATTERN
       # Default value
       log.warn('Invalid check name in the tag.' +
                'Fallback to the constant "fluent-plugin-sensu".',
@@ -219,15 +206,11 @@ module Fluent
       # Read from the field
       if @check_output_field
         check_output = record[@check_output_field]
-        if check_output
-          return check_output
-        end
+        return check_output if check_output
         # Fall through
       end
       # Returns the option value
-      if @check_output
-        return @check_output
-      end
+      return @check_output if @check_output
       # Default to JSON notation of the record
       return record.to_json
     end
