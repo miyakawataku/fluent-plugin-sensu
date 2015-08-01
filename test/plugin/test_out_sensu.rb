@@ -210,5 +210,52 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "output" attribute {{{1
+
+  # Check output is determined by check_output_field
+  # or check_output if specified
+  def test_determine_output_attribute_with_options
+    driver = create_driver(%[
+      check_output_field desc
+      check_output Something is going on
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({ 'desc' => 'Something is afield' }, time)
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected_for_output_field = {
+      'name' => 'ddos',
+      'output' => 'Something is afield',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => { 'desc' => 'Something is afield' },
+      },
+    }
+    expected_for_output_option = {
+      'name' => 'ddos',
+      'output' => 'Something is going on',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+    }
+    assert_equal([
+      ['localhost', 3030, expected_for_output_field],
+      ['localhost', 3030, expected_for_output_option],
+    ], result)
+  end
+
+  # }}}1
 
 end

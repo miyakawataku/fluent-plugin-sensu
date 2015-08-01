@@ -17,9 +17,13 @@ module Fluent
     # The port to which sensu-client is listening.
     config_param :port, :integer, :default => 3030
 
-    # "name" attribute: default = tag if valid, or "fluent-plugin-sensu"
+    # Options for "name" attribute.
     config_param :check_name, :string, :default => nil
     config_param :check_name_field, :string, :default => nil
+
+    # Options for "output" attribute.
+    config_param :check_output_field, :string, :default => nil
+    config_param :check_output, :string, :default => nil
 
     CHECK_NAME_PATTERN = /\A[\w.-]+\z/
 
@@ -60,7 +64,7 @@ module Fluent
       chunk.msgpack_each { |(tag, time, record)|
         payload = {
           'name' => determine_check_name(tag, record),
-          'output' => record.to_json,
+          'output' => determine_output(record),
           'status' => 3,
           'type' => 'standard',
           'handlers' => ['default'],
@@ -109,6 +113,25 @@ module Fluent
                'Fallback to the constant "fluent-plugin-sensu".',
                :tag => tag)
       return 'fluent-plugin-sensu'
+    end
+
+    # Determines "output" attribute of a check.
+    private
+    def determine_output(record)
+      # Read from the field
+      if @check_output_field
+        check_output = record[@check_output_field]
+        if check_output
+          return check_output
+        end
+        # Fall through
+      end
+      # Returns the option value
+      if @check_output
+        return @check_output
+      end
+      # Default to JSON notation of the record
+      return record.to_json
     end
 
     # Send a check to sensu-client.
