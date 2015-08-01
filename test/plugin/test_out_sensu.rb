@@ -421,5 +421,55 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # "handlers" attribute {{{1
+
+  # Rejects the option if it is malformed.
+  def test_rejects_malformed_handlers
+    assert_raise(JSON::ParserError) {
+      create_driver(%[check_handlers NotJsonString], 'ddos')
+    }
+  end
+
+  # Rejects the option if it is not an array.
+  def test_rejects_nonarray_handlers
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[check_handlers 30], 'ddos')
+    }
+  end
+
+  def test_rejects_nonstring_element_in_handlers
+    assert_raise(Fluent::ConfigError) {
+      create_driver(%[check_handlers ["default", 32]], 'ddos')
+    }
+  end
+
+  # Specifies handlers at config.
+  def test_specifies_handlers
+    driver = create_driver(%[
+      check_handlers ["default", "graphite"]
+    ], 'ddos')
+    time = Time.parse('2015-01-03 12:34:56 UTC').to_i
+    driver.emit({}, time)
+    driver.run
+    result = driver.instance.sent_data
+    expected = {
+      'name' => 'ddos',
+      'output' => '{}',
+      'status' => 3,
+      'type' => 'standard',
+      'handlers' => ['default', 'graphite'],
+      'executed' => time,
+      'fluentd' => {
+        'tag' => 'ddos',
+        'time' => time.to_i,
+        'record' => {},
+      },
+    }
+    assert_equal([
+      ['localhost', 3030, expected],
+    ], result)
+  end
+
+  # }}}1
 
 end

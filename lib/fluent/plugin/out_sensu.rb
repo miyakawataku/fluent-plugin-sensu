@@ -65,6 +65,22 @@ module Fluent
     # Option for "ttl" attribute.
     config_param :check_ttl, :integer, :default => nil
 
+    # Option for "handlers" attribute.
+    config_param(:check_handlers, :default => ['default']) { |handlers_str|
+      error_message = "invalid 'check_handlers': #{handlers_str};" +
+                      " 'check_handlers' must be an array of strings."
+      obj = JSON.load(handlers_str)
+      if not obj.is_a?(Array)
+        raise Fluent::ConfigError, error_message
+      end
+      array = obj
+      all_string_elements = array.all? { |e| e.is_a?(String) }
+      if not all_string_elements
+        raise Fluent::ConfigError, error_message
+      end
+      array
+    }
+
     # Load modules.
     private
     def initialize
@@ -105,7 +121,7 @@ module Fluent
           'output' => determine_output(record),
           'status' => determine_status(record),
           'type' => @check_type,
-          'handlers' => ['default'],
+          'handlers' => @check_handlers,
           'executed' => time,
           'fluentd' => {
             'tag' => tag,
