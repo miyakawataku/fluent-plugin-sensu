@@ -20,6 +20,8 @@ module Fluent
     # Options for "name" attribute.
     config_param :check_name, :string, :default => nil
     config_param :check_name_field, :string, :default => nil
+
+    # Pattern for check names.
     CHECK_NAME_PATTERN = /\A[\w.-]+\z/
 
     # Options for "output" attribute.
@@ -37,9 +39,17 @@ module Fluent
       end
       check_status
     }
+
+    # Pattern for OK status.
     OK_PATTERN = /\A(0|OK)\z/i
+
+    # Pattern for WARNING status.
     WARNING_PATTERN = /\A(1|WARNING|warn)\z/i
+
+    # Pattern for CRITICAL status.
     CRITICAL_PATTERN = /\A(2|CRITICAL|crit)\z/i
+
+    # Pattern for UNKNOWN status.
     UNKNOWN_PATTERN = /\A(3|UNKNOWN|CUSTOM)\z/i
 
     # Option for "type" attribute.
@@ -159,6 +169,19 @@ module Fluent
       }
     end
 
+    # Send a check to sensu-client.
+    private
+    def send_check(server, port, payload)
+      json = payload.to_json
+      sensu_client = TCPSocket.open(@server, @port)
+      begin
+        sensu_client.puts(json)
+      ensure
+        sensu_client.close
+      end
+    end
+
+    # Adds an attribute to the payload if present.
     private
     def add_attribute_if_present(payload, name, value)
       payload[name] = value if value
@@ -234,6 +257,7 @@ module Fluent
       return nil
     end
 
+    # Determines "source" attribute of a check.
     private
     def determine_source(record)
       if @check_source_field
@@ -251,18 +275,6 @@ module Fluent
         return executed if executed.is_a?(Integer)
       end
       return time
-    end
-
-    # Send a check to sensu-client.
-    public
-    def send_check(server, port, payload)
-      json = payload.to_json
-      sensu_client = TCPSocket.open(@server, @port)
-      begin
-        sensu_client.puts(json)
-      ensure
-        sensu_client.close
-      end
     end
 
   end

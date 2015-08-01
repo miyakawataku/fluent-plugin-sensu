@@ -28,24 +28,7 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
-  # Connection {{{1
-
-  # Connection settings are read
-  def test_connection_settings
-    driver = create_driver(%[
-      server sensu-client.local
-      port 3031
-    ])
-    assert_equal 'sensu-client.local', driver.instance.instance_eval{ @server }
-    assert_equal 3031, driver.instance.instance_eval{ @port }
-  end
-
-  # Default values are set to connection settings
-  def test_default_connection_settings
-    driver = create_driver('')
-    assert_equal 'localhost', driver.instance.instance_eval{ @server }
-    assert_equal 3030, driver.instance.instance_eval{ @port }
-  end
+  # Default value {{{1
 
   # Send default values for empty data and empty setting
   def test_write_empty_data_with_empty_setting
@@ -68,6 +51,26 @@ class SensuOutputTest < Test::Unit::TestCase
       },
     }
     assert_equal [['localhost', 3030, expected]], result
+  end
+
+  # }}}1
+  # Connection {{{1
+
+  # Connection settings are read
+  def test_connection_settings
+    driver = create_driver(%[
+      server sensu-client.local
+      port 3031
+    ])
+    assert_equal 'sensu-client.local', driver.instance.instance_eval{ @server }
+    assert_equal 3031, driver.instance.instance_eval{ @port }
+  end
+
+  # Default values are set to connection settings
+  def test_default_connection_settings
+    driver = create_driver('')
+    assert_equal 'localhost', driver.instance.instance_eval{ @server }
+    assert_equal 3030, driver.instance.instance_eval{ @port }
   end
 
   # Send default values to aother node and another port
@@ -99,6 +102,7 @@ class SensuOutputTest < Test::Unit::TestCase
   # }}}1
   # "name" attribute {{{1
 
+  # Rejects invalid check name config
   def test_rejects_invalid_check_name_in_option
     assert_raise(Fluent::ConfigError) {
       create_driver(%[check_name invalid/check/name], 'ddos')
@@ -437,6 +441,7 @@ class SensuOutputTest < Test::Unit::TestCase
     }
   end
 
+  # Rejects the option if the array contains non-integer values.
   def test_rejects_nonstring_element_in_handlers
     assert_raise(Fluent::ConfigError) {
       create_driver(%[check_handlers ["default", 32]], 'ddos')
@@ -603,6 +608,7 @@ class SensuOutputTest < Test::Unit::TestCase
   # }}}1
   # "executed" attribute {{{1
 
+  # Determine "executed" time attribute by the options.
   def test_determine_executed_by_options
     driver = create_driver(%[
       check_executed_field timestamp
