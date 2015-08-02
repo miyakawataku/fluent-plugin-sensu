@@ -4,8 +4,6 @@
 [sensu-client](https://sensuapp.org/docs/latest/clients),
 which is an agent process of Sensu monitoring framework.
 
-This plugin is under development and not working yet.
-
 ## Configuration
 
 ### Example configuration
@@ -335,7 +333,7 @@ https://github.com/sensu/sensu-community-plugins/blob/master/plugins/graphite/ch
 
 ## Installation
 
-Install `fluent-plugin-sensu` gem (not yet available).
+Install `fluent-plugin-sensu` gem.
 
 # Contributing
 
