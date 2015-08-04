@@ -1,5 +1,4 @@
 # -*- encoding: utf-8 -*-
-# vim: et sw=2 sts=2
 
 module Fluent
 
@@ -116,11 +115,16 @@ module Fluent
     # Reject invalid check_low_flap_threshold and check_high_flap_threshold
     private
     def reject_invalid_flapping_thresholds
-      if @check_low_flap_threshold.nil? ^ @check_high_flap_threshold.nil?
+      # Thresholds must be specified together or not specified at all.
+      only_one_threshold_is_specified =
+        @check_low_flap_threshold.nil? ^ @check_high_flap_threshold.nil?
+      if only_one_threshold_is_specified
         raise ConfigError,
           "'check_low_flap_threshold' and 'check_high_flap_threshold'" +
-          " specified togher, or not specified at all."
+          " must be specified togher, or not specified at all."
       end
+
+      # Check 0 <= check_low_flap_threshold <= check_high_flap_threshold <= 100
       if @check_low_flap_threshold
         in_order = 0 <= @check_low_flap_threshold &&
           @check_low_flap_threshold <= @check_high_flap_threshold &&
@@ -139,40 +143,46 @@ module Fluent
       [tag, time, record].to_msgpack
     end
 
-    # Send a check
+    # Send a check result for each data.
     public
     def write(chunk)
-      results = []
       chunk.msgpack_each { |(tag, time, record)|
-        payload = {
-          'name' => determine_check_name(tag, record),
-          'output' => determine_output(tag, record),
-          'status' => determine_status(tag, record),
-          'type' => @check_type,
-          'handlers' => @check_handlers,
-          'executed' => determine_executed_time(tag, time, record),
-          'fluentd' => {
-            'tag' => tag,
-            'time' => time.to_i,
-            'record' => record,
-          },
-        }
-        add_attribute_if_present(
-          payload, 'ttl', @check_ttl)
-        add_attribute_if_present(
-          payload, 'low_flap_threshold', @check_low_flap_threshold)
-        add_attribute_if_present(
-          payload, 'high_flap_threshold', @check_high_flap_threshold)
-        add_attribute_if_present(
-          payload, 'source', determine_source(tag, record))
+        payload = make_check_result(tag, time, record)
         send_check(@server, @port, payload)
       }
     end
 
-    # Send a check to sensu-client.
+    # Make a check result for the Fluentd data.
     private
-    def send_check(server, port, payload)
-      json = payload.to_json
+    def make_check_result(tag, time, record)
+      check_result = {
+        'name' => determine_check_name(tag, record),
+        'output' => determine_output(tag, record),
+        'status' => determine_status(tag, record),
+        'type' => @check_type,
+        'handlers' => @check_handlers,
+        'executed' => determine_executed_time(tag, time, record),
+        'fluentd' => {
+          'tag' => tag,
+          'time' => time.to_i,
+          'record' => record,
+        },
+      }
+      add_attribute_if_present(
+        check_result, 'ttl', @check_ttl)
+      add_attribute_if_present(
+        check_result, 'low_flap_threshold', @check_low_flap_threshold)
+      add_attribute_if_present(
+        check_result, 'high_flap_threshold', @check_high_flap_threshold)
+      add_attribute_if_present(
+        check_result, 'source', determine_source(tag, record))
+      return check_result
+    end
+
+    # Send a check result to sensu-client.
+    private
+    def send_check(server, port, check_result)
+      json = check_result.to_json
       sensu_client = TCPSocket.open(@server, @port)
       begin
         sensu_client.puts(json)
@@ -181,10 +191,10 @@ module Fluent
       end
     end
 
-    # Adds an attribute to the payload if present.
+    # Adds an attribute to the check result if present.
     private
-    def add_attribute_if_present(payload, name, value)
-      payload[name] = value if value
+    def add_attribute_if_present(check_result, name, value)
+      check_result[name] = value if value
     end
 
     # Determines "name" attribute of a check.
@@ -202,14 +212,17 @@ module Fluent
                  :value => check_name)
         # Fall through
       end
+
       # check_name option
       return @check_name if @check_name
+
       # Tag
       return tag if tag =~ CHECK_NAME_PATTERN
-      # Default value
       log.warn('Invalid check name in the tag.' +
                'Fallback to the constant "fluent-plugin-sensu".',
                :tag => tag)
+
+      # Default value
       return 'fluent-plugin-sensu'
     end
 
@@ -224,8 +237,10 @@ module Fluent
                 :tag => tag, :check_output_field => @check_output_field)
         # Fall through
       end
+
       # Returns the option value
       return @check_output if @check_output
+
       # Default to JSON notation of the record
       return record.to_json
     end
@@ -244,6 +259,7 @@ module Fluent
                 :tag => tag, :check_status_field => @check_status_field,
                 :value => status_field_val)
       end
+
       # Returns the default
       return @check_status
     end
@@ -262,27 +278,35 @@ module Fluent
     # Determines "source" attribute of a check.
     private
     def determine_source(tag, record)
+      # Read the field
       if @check_source_field
         source = record[@check_source_field]
         return source if source
         log.warn('the field for "source" attribute is absent',
                 :tag => tag, :check_source_field => @check_source_field)
       end
+
+      # Default to "check_source" option or N/A
       return @check_source
     end
 
     # Determines "executed" attribute of a check.
     private
     def determine_executed_time(tag, time, record)
+      # Read the field
       if @check_executed_field
         executed = record[@check_executed_field]
         return executed if executed.is_a?(Integer)
         log.warn('the field for "executed" attribute is absent',
                 :tag => tag, :check_executed_field => @check_executed_field)
       end
+
+      # Default to the time of Fluentd data
       return time
     end
 
   end
 
 end
+
+# vim: et sw=2 sts=2
