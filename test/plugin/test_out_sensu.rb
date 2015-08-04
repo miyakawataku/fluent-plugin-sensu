@@ -30,6 +30,13 @@ class SensuOutputTest < Test::Unit::TestCase
   # }}}1
   # Default value {{{1
 
+  # flush_interval is set to 1 second so that checks are not delayed so much
+  def test_default_buffer_setting
+    driver = create_driver('', 'ddos')
+    flush_interval = driver.instance.instance_eval{ @flush_interval }
+    assert_equal 1, flush_interval
+  end
+
   # Send default values for empty data and empty setting
   def test_write_empty_data_with_empty_setting
     driver = create_driver('', 'ddos')

@@ -87,6 +87,10 @@ module Fluent
     # Options for "executed" attribute.
     config_param :check_executed_field, :string, :default => nil
 
+    # Buffering option.
+    # Set to 1 second by default so that checks are not delayed so much.
+    config_param :flush_interval, :time, :default => 1
+
     # Load modules.
     private
     def initialize
