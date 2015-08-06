@@ -47,19 +47,19 @@ which contains attributes as follows.
 Attributes are indicated
 by [JSONPath](http://goessner.net/articles/JsonPath/) expressions.
 
-* `$.name`
+* [`$.name`](#name-attribute)
   * The check name to identify the check.
-* `$.output`
+* [`$.output`](#output-attribute)
   * An arbitrary string to describe the check result.
   * This attribute is often used to contain metric values.
-* `$.status`
+* [`$.status`](#status-attribute)
   * The severity of the check result.
   * 0 (OK), 1 (WARNING), 2 (CRITICAL) or 3 (UNKNOWN or CUSTOM).
 
 The check result can also contain other attributes.
 This plugin supports the attributes below.
 
-* `$.type`
+* [`$.type`](#type-attribute)
   * Either "standard" or "metric".
   * If the attribute is set to "standard", the sensu-server creates an event
     only when the status is not OK or when the status is changed to OK.
@@ -67,27 +67,28 @@ This plugin supports the attributes below.
     even if the status is OK.
     It is useful when Sensu sends check results to metrics collectors
     such as [Graphite](http://graphite.wikidot.com/).
-* `$.ttl`
+* [`$.ttl`](#ttl-attribute)
   * The time to live (TTL) in seconds,
     until the check result is considered stale.
     If TTL expires, sensu-server creates an event.
   * This attribute is useful when you want to be notified
     when logs are not output for a certain period.
   * Same as `freshness_threshold` in Nagios.
-* `$.handlers`
+* [`$.handlers`](#handlers-attributes)
   * The names of handlers which process events created for the check.
-* `$.low_flap_threshold` and `$.high_flap_threshold`
+* [`$.low_flap_threshold` and `$.high_flap_threshold`](
+  #low_flap_threshold-and-high_flap_threshold-attributes)
   * Threshold percentages to determine the status is considered "flapping,"
     or the state is changed too frequently.
   * Same as the options in Nagios.
     See the description of [Flap Detection](
     https://assets.nagios.com/downloads/nagioscore/docs/nagioscore/3/en/flapping.html)
     in Nagios.
-* `$.source`
+* [`$.source`](#source-attribute)
   * The source of the check, such as servers or network switches.
   * If this attribute is not specified,
     the host of sensu-client is considered as the source.
-* `$.executed`
+* [`$.executed`](#executed-attribute)
   * The timestamp on which the check is executed.
   * Note that there is also another timestamp attribute named `issued`,
     which is automatically measured by sensu-client process.
