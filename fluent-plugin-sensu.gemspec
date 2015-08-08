@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description   = 'Fluentd output plugin to send checks' +
                        ' to sensu-client.'
   spec.summary       = spec.description
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/miyakawataku/fluent-plugin-sensu"
   spec.license       = "Apache License, v2.0"
 
   spec.files         = `git ls-files`.split($/)
@@ -21,7 +21,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler", "~> 1.3"
-  spec.add_development_dependency "rake"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rr"
   spec.add_runtime_dependency "fluentd"
