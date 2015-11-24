@@ -186,13 +186,25 @@ module Fluent
     # Send a check result to sensu-client.
     private
     def send_check(server, port, check_result)
-      json = check_result.to_json
+      json = to_json(check_result)
       sensu_client = TCPSocket.open(@server, @port)
       begin
         sensu_client.puts(json)
       ensure
         sensu_client.close
       end
+    end
+
+    # Make a json from the data.
+    public
+    def to_json(data)
+      raw_json = data.to_json.force_encoding(Encoding::BINARY)
+      regex = /[\xc0-\xdf][\x80-\xbf]
+              |[\xe0-\xef][\x80-\xbf]{2}
+              |[\xf0-\xf7][\x80-\xbf]{3}/nx
+      return raw_json.gsub(regex) { |ch|
+        ch.unpack('U*').pack('n*').unpack('H*')[0].gsub(/.+/, %q(\\\\u\&))
+      }
     end
 
     # Adds an attribute to the check result if present.

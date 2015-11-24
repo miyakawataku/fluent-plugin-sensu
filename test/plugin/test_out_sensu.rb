@@ -674,5 +674,23 @@ class SensuOutputTest < Test::Unit::TestCase
   end
 
   # }}}1
+  # JSON serialization {{{1
+
+  # ASCII characters are serialized literally.
+  def test_serialize_ascii_data_to_json
+    data = {"foo" => "FOO"}
+    driver = create_driver('')
+    assert_equal('{"foo":"FOO"}', driver.instance.to_json(data))
+  end
+
+  # Non-ASCII characters are Unicode-escaped.
+  def test_serialize_non_ascii_data_to_json
+    data = {"foo" => "\u3042\u4e9c\u03b1"}
+    driver = create_driver('')
+    assert_equal(%q({"foo":"\u3042\u4e9c\u03b1"}), driver.instance.to_json(data))
+  end
+
+  # }}}1
+
 
 end
