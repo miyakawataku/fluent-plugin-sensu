@@ -6,7 +6,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-sensu"
-  spec.version       = '1.0.0'
+  spec.version       = '1.0.1'
   spec.authors       = ["MIYAKAWA Taku"]
   spec.email         = ["miyakawa.taku@gmail.com"]
   spec.description   = 'Fluentd output plugin to send checks' +
